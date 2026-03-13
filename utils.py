@@ -22,3 +22,11 @@ def normalize_tts_text(text: str, *, strip_timestamps: bool = True) -> str:
 
     return " ".join(cleaned).strip()
 
+
+def is_command_triggered(event_extras) -> bool:
+    if not isinstance(event_extras, dict):
+        return False
+    handlers_parsed_params = event_extras.get("handlers_parsed_params")
+    if not isinstance(handlers_parsed_params, dict):
+        return False
+    return len(handlers_parsed_params) > 0

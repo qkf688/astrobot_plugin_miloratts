@@ -1,6 +1,6 @@
 import unittest
 
-from utils import normalize_tts_text
+from utils import is_command_triggered, normalize_tts_text
 
 
 class NormalizeTTSTextTests(unittest.TestCase):
@@ -24,6 +24,24 @@ class NormalizeTTSTextTests(unittest.TestCase):
         self.assertEqual(normalize_tts_text(None), "")  # type: ignore[arg-type]
 
 
+class IsCommandTriggeredTests(unittest.TestCase):
+    def test_returns_false_when_extras_is_not_dict(self):
+        self.assertFalse(is_command_triggered(None))
+
+    def test_returns_false_when_handlers_parsed_params_missing(self):
+        self.assertFalse(is_command_triggered({}))
+
+    def test_returns_false_when_handlers_parsed_params_is_not_dict(self):
+        self.assertFalse(is_command_triggered({"handlers_parsed_params": []}))
+
+    def test_returns_false_when_handlers_parsed_params_empty(self):
+        self.assertFalse(is_command_triggered({"handlers_parsed_params": {}}))
+
+    def test_returns_true_when_handlers_parsed_params_non_empty(self):
+        self.assertTrue(
+            is_command_triggered({"handlers_parsed_params": {"some.cmd": {}}}),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
-

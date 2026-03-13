@@ -13,7 +13,7 @@ from astrbot.core.config import AstrBotConfig
 from astrbot.core.provider.entities import LLMResponse
 
 from .miloratts_api import milora_tts_request
-from .utils import normalize_tts_text
+from .utils import is_command_triggered, normalize_tts_text
 
 
 @register(
@@ -27,6 +27,7 @@ class MiloraTTSPlugin(Star):
         super().__init__(context)
         self.enable_tts = bool(config.get("enable_tts", True))
         self.strip_timestamps = bool(config.get("strip_timestamps", True))
+        self.skip_command_reply_tts = bool(config.get("skip_command_reply_tts", True))
 
         try:
             self.tts_probability = max(
@@ -57,11 +58,12 @@ class MiloraTTSPlugin(Star):
 
         self.speaker = str(config.get("speaker", "派星星"))
         logger.info(
-            "Milora TTS 插件已加载，音色: %s, 概率: %s%%, max_length: %s, too_long_strategy: %s",
+            "Milora TTS 插件已加载，音色: %s, 概率: %s%%, max_length: %s, too_long_strategy: %s, skip_command_reply_tts: %s",
             self.speaker,
             self.tts_probability,
             self.max_length,
             self.too_long_strategy,
+            self.skip_command_reply_tts,
         )
 
     async def initialize(self):
@@ -71,6 +73,10 @@ class MiloraTTSPlugin(Star):
     async def on_decorating_result(self, event: AstrMessageEvent):
         try:
             if not self.enable_tts:
+                return
+
+            if self.skip_command_reply_tts and is_command_triggered(event.get_extra()):
+                logger.debug("检测到指令触发的回复，跳过语音合成")
                 return
 
             if not self.probability(self.tts_probability):

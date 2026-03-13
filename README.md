@@ -37,6 +37,7 @@
 | `min_length` | int | `5` | TTS 最小字数，小于该字数不使用语音 |
 | `too_long_strategy` | string | `truncate` | 超长文本策略：`truncate`=截断后合成，`skip`=直接跳过 |
 | `strip_timestamps` | bool | `true` | 移除单独一行的 ISO-8601 时间戳 |
+| `skip_command_reply_tts` | bool | `true` | 指令回复（例如 `/sid`、`/help`）不转语音 |
 
 ### 可用音色示例
 
@@ -60,6 +61,7 @@
   "min_length": 3,
   "too_long_strategy": "truncate",
   "strip_timestamps": true,
+  "skip_command_reply_tts": true,
   "enable_tts": true
 }
 ```

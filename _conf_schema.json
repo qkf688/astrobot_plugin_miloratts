@@ -61,6 +61,11 @@
         "description": "移除单独一行的 ISO-8601 时间戳（例如 2026-03-12T12:17:28.248Z），减少无意义播报",
         "default": true
     },
+    "skip_command_reply_tts": {
+        "type": "bool",
+        "description": "当本次回复由真实指令触发（例如 /sid、/help）时，跳过语音合成",
+        "default": true
+    },
     "enable_tts": {
         "type": "bool",
         "description": "启用该插件",

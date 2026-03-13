@@ -66,6 +66,21 @@
         "description": "当本次回复由真实指令触发（例如 /sid、/help）时，跳过语音合成",
         "default": true
     },
+    "split_at_before_tts": {
+        "type": "bool",
+        "description": "当回复中包含 @（At 消息段）时，先单独发送 @，避免在语音替换时丢失（关闭后保持旧行为：@ 会随语音替换而丢失）",
+        "default": true
+    },
+    "split_emoji_before_tts": {
+        "type": "bool",
+        "description": "当回复中包含平台表情（如 QQ Face / 微信 WechatEmoji）时，先单独发送表情，避免在语音替换时丢失（关闭后保持旧行为：表情会随语音替换而丢失）",
+        "default": true
+    },
+    "split_unicode_emoji_before_tts": {
+        "type": "bool",
+        "description": "将纯文本中的 Unicode emoji（🙂🎉 等）抽取并单独发送，避免被 TTS 读出（关闭后 emoji 会参与 TTS 文本）",
+        "default": true
+    },
     "enable_tts": {
         "type": "bool",
         "description": "启用该插件",

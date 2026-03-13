@@ -38,6 +38,9 @@
 | `too_long_strategy` | string | `truncate` | 超长文本策略：`truncate`=截断后合成，`skip`=直接跳过 |
 | `strip_timestamps` | bool | `true` | 移除单独一行的 ISO-8601 时间戳 |
 | `skip_command_reply_tts` | bool | `true` | 指令回复（例如 `/sid`、`/help`）不转语音 |
+| `split_at_before_tts` | bool | `true` | 回复中包含 `@`（At 消息段）时，先单独发送 `@`（关闭后在语音替换时会丢失，保持旧行为） |
+| `split_emoji_before_tts` | bool | `true` | 回复中包含表情组件（QQ `Face` / 微信 `WechatEmoji`）时，先单独发送表情（关闭后在语音替换时会丢失，保持旧行为） |
+| `split_unicode_emoji_before_tts` | bool | `true` | 将纯文本中的 Unicode emoji（🙂🎉 等）抽取并单独发送（关闭后 emoji 会参与 TTS 文本，可能被读出） |
 
 ### 可用音色示例
 
@@ -62,6 +65,9 @@
   "too_long_strategy": "truncate",
   "strip_timestamps": true,
   "skip_command_reply_tts": true,
+  "split_at_before_tts": true,
+  "split_emoji_before_tts": true,
+  "split_unicode_emoji_before_tts": true,
   "enable_tts": true
 }
 ```

@@ -10,10 +10,11 @@ from astrbot.api.star import Context, Star, register
 from astrbot.core.agent.tool import FunctionTool
 from astrbot.core.astr_agent_context import AstrAgentContext
 from astrbot.core.config import AstrBotConfig
+from astrbot.core.message.message_event_result import MessageChain
 from astrbot.core.provider.entities import LLMResponse
 
 from .miloratts_api import milora_tts_request
-from .utils import is_command_triggered, normalize_tts_text
+from .utils import extract_unicode_emojis, is_command_triggered, normalize_tts_text
 
 
 @register(
@@ -28,6 +29,12 @@ class MiloraTTSPlugin(Star):
         self.enable_tts = bool(config.get("enable_tts", True))
         self.strip_timestamps = bool(config.get("strip_timestamps", True))
         self.skip_command_reply_tts = bool(config.get("skip_command_reply_tts", True))
+
+        self.split_at_before_tts = bool(config.get("split_at_before_tts", True))
+        self.split_emoji_before_tts = bool(config.get("split_emoji_before_tts", True))
+        self.split_unicode_emoji_before_tts = bool(
+            config.get("split_unicode_emoji_before_tts", True)
+        )
 
         try:
             self.tts_probability = max(
@@ -88,13 +95,39 @@ class MiloraTTSPlugin(Star):
                 logger.debug("本次消息没有结果，跳过 TTS")
                 return
 
-            text_parts = []
+            at_components: list = []
+            emoji_components: list = []
+            unicode_emoji_text_parts: list[str] = []
+            text_parts: list[str] = []
+
             for component in result.chain:
+                if self.split_at_before_tts and isinstance(component, Comp.At):
+                    at_components.append(component)
+                    continue
+
+                if self.split_emoji_before_tts and isinstance(
+                    component, (Comp.Face, Comp.WechatEmoji)
+                ):
+                    emoji_components.append(component)
+                    continue
+
                 if hasattr(component, "text"):
-                    text_parts.append(component.text)
+                    component_text = getattr(component, "text", None)
+                    if not isinstance(component_text, str):
+                        continue
+
+                    if self.split_unicode_emoji_before_tts:
+                        emoji_text, remaining_text = extract_unicode_emojis(
+                            component_text,
+                        )
+                        if emoji_text:
+                            unicode_emoji_text_parts.append(emoji_text)
+                        text_parts.append(remaining_text)
+                    else:
+                        text_parts.append(component_text)
 
             if not text_parts:
-                logger.debug("本次消息没有文本，跳过 TTS")
+                logger.debug("本次消息没有可用于 TTS 的文本，跳过 TTS")
                 return
 
             original_text = "".join(text_parts).strip()
@@ -167,8 +200,29 @@ class MiloraTTSPlugin(Star):
             if result is None:
                 logger.warning("合成完成但 event result 已失效，跳过")
                 return
-            result.chain = [Comp.Record(file=audio_url)]
-            logger.info(f"语音合成完成: {audio_url}")
+
+            result.chain.clear()
+
+            if at_components:
+                try:
+                    await event.send(MessageChain(at_components))
+                except Exception as e:
+                    logger.error(f"发送 @ 消息失败: {e}")
+
+            emoji_chain = []
+            if emoji_components:
+                emoji_chain.extend(emoji_components)
+            unicode_emoji_text = "".join(unicode_emoji_text_parts).strip()
+            if unicode_emoji_text:
+                emoji_chain.append(Comp.Plain(unicode_emoji_text))
+            if emoji_chain:
+                try:
+                    await event.send(MessageChain(emoji_chain))
+                except Exception as e:
+                    logger.error(f"发送 emoji 消息失败: {e}")
+
+            await event.send(MessageChain([Comp.Record(file=audio_url)]))
+            logger.info(f"语音合成完成并已发送: {audio_url}")
 
         except Exception as e:
             logger.error(f"Error in on_decorating_result: {e}")

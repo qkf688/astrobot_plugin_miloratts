@@ -1,6 +1,6 @@
 import unittest
 
-from utils import is_command_triggered, normalize_tts_text
+from utils import extract_unicode_emojis, is_command_triggered, normalize_tts_text
 
 
 class NormalizeTTSTextTests(unittest.TestCase):
@@ -41,6 +41,39 @@ class IsCommandTriggeredTests(unittest.TestCase):
         self.assertTrue(
             is_command_triggered({"handlers_parsed_params": {"some.cmd": {}}}),
         )
+
+
+class ExtractUnicodeEmojisTests(unittest.TestCase):
+    def test_empty_input(self):
+        self.assertEqual(extract_unicode_emojis(""), ("", ""))
+        self.assertEqual(extract_unicode_emojis(None), ("", ""))  # type: ignore[arg-type]
+
+    def test_extracts_simple_emojis(self):
+        emoji, remaining = extract_unicode_emojis("hi🙂there🎉")
+        self.assertEqual(emoji, "🙂🎉")
+        self.assertEqual(normalize_tts_text(remaining), "hi there")
+
+    def test_extracts_flag_emoji(self):
+        emoji, remaining = extract_unicode_emojis("中国🇨🇳加油")
+        self.assertEqual(emoji, "🇨🇳")
+        self.assertEqual(normalize_tts_text(remaining), "中国 加油")
+
+    def test_extracts_zwj_sequence(self):
+        # Woman technologist: 👩‍💻 (emoji + ZWJ + emoji)
+        emoji, remaining = extract_unicode_emojis("OK👩‍💻done")
+        self.assertEqual(emoji, "👩‍💻")
+        self.assertEqual(normalize_tts_text(remaining), "OK done")
+
+    def test_extracts_skin_tone_modifier(self):
+        # Thumbs up with skin tone: 👍🏻
+        emoji, remaining = extract_unicode_emojis("👍🏻 nice")
+        self.assertEqual(emoji, "👍🏻")
+        self.assertEqual(normalize_tts_text(remaining), "nice")
+
+    def test_extracts_keycap(self):
+        emoji, remaining = extract_unicode_emojis("press 1️⃣ now")
+        self.assertEqual(emoji, "1️⃣")
+        self.assertEqual(normalize_tts_text(remaining), "press now")
 
 
 if __name__ == "__main__":
